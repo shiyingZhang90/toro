@@ -74,7 +74,7 @@ public class AdsPlayable extends ExoPlayable {
 
   @CallSuper
   @Override public void prepare(boolean prepareSource) {
-    this.mediaSource = createAdsMediaSource(creator, mediaUri, fileExt, //
+    this.videoSource = createAdsMediaSource(creator, videoUri, fileExt, //
         factory.player, adsLoader, adsContainer, factory);
     super.prepare(prepareSource);
   }

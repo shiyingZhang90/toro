@@ -24,7 +24,9 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.MergingMediaSource;
 import com.google.android.exoplayer2.ui.PlayerView;
 import im.ene.toro.ToroPlayer;
 import im.ene.toro.ToroPlayer.VolumeChangeListeners;
@@ -56,20 +58,42 @@ class PlayableImpl implements Playable {
   protected final VolumeChangeListeners volumeChangeListeners = new VolumeChangeListeners();
   protected final ToroPlayer.ErrorListeners errorListeners = new ToroPlayer.ErrorListeners();
 
-  protected final Uri mediaUri; // immutable, parcelable
+  protected final Uri videoUri; // immutable, parcelable
+  protected final Uri[] videoUris; // immutable, parcelable
+  protected final Uri audioUri;
   protected final String fileExt;
   protected final ExoCreator creator; // required, cached
 
   protected SimpleExoPlayer player; // on-demand, cached
-  protected MediaSource mediaSource;  // on-demand, since we do not reuse MediaSource now.
+  protected MediaSource videoSource;  // on-demand, since we do not reuse MediaSource now.
+  protected ConcatenatingMediaSource concatenatingMediaSource;  // on-demand, since we do not reuse MediaSource now.
+  protected MediaSource audioSource;  // on-demand, since we do not reuse MediaSource now.
   protected PlayerView playerView; // on-demand, not always required.
 
   private boolean sourcePrepared = false;
   private boolean listenerApplied = false;
 
-  PlayableImpl(ExoCreator creator, Uri uri, String fileExt) {
+  PlayableImpl(ExoCreator creator, Uri videoUri,Uri audioUri, String fileExt) {
     this.creator = creator;
-    this.mediaUri = uri;
+    this.videoUri = videoUri;
+    this.videoUris = null;
+    this.audioUri = audioUri;
+    this.fileExt = fileExt;
+  }
+
+  PlayableImpl(ExoCreator creator, Uri[] videoUris,Uri audioUri, String fileExt) {
+    this.creator = creator;
+    this.videoUri = null;
+    this.videoUris = videoUris;
+    this.audioUri = audioUri;
+    this.fileExt = fileExt;
+  }
+
+  PlayableImpl(ExoCreator creator, Uri videoUri, String fileExt) {
+    this.creator = creator;
+    this.videoUri = videoUri;
+    this.videoUris = null;
+    this.audioUri = null;
     this.fileExt = fileExt;
   }
 
@@ -116,7 +140,9 @@ class PlayableImpl implements Playable {
       ToroExo.setVolumeInfo(this.player, new VolumeInfo(false, 1.f));
       player.stop(true);
     }
-    this.mediaSource = null; // so it will be re-prepared when play() is called.
+    this.concatenatingMediaSource = null;
+    this.videoSource = null; // so it will be re-prepared when play() is called.
+    this.audioSource = null; // so it will be re-prepared when play() is called.
     this.sourcePrepared = false;
   }
 
@@ -140,7 +166,9 @@ class PlayableImpl implements Playable {
           .releasePlayer(this.creator, this.player);
     }
     this.player = null;
-    this.mediaSource = null;
+    this.concatenatingMediaSource = null;
+    this.videoSource = null; // so it will be re-prepared when play() is called.
+    this.audioSource = null; // so it will be re-prepared when play() is called.
     this.sourcePrepared = false;
   }
 
@@ -241,17 +269,37 @@ class PlayableImpl implements Playable {
 
   // TODO [20180822] Double check this.
   private void ensureMediaSource() {
-    if (mediaSource == null) {  // Only actually prepare the source when play() is called.
+    if (videoUri != null) {  // Only actually prepare the source when play() is called. One problem is if no music will be added, we only need to check videoSource
       sourcePrepared = false;
-      mediaSource = creator.createMediaSource(mediaUri, fileExt);
+      videoSource = creator.createMediaSource(videoUri, fileExt);
+    }
+    if (videoUris != null) {  // Only actually prepare the source when play() is called. One problem is if no music will be added, we only need to check videoSource
+      sourcePrepared = false;
+      concatenatingMediaSource = new ConcatenatingMediaSource(creator.createMediaSource(videoUris[0], fileExt));
+      for(int i=1; i<videoUris.length; i++) {
+        videoSource = creator.createMediaSource(videoUris[i], fileExt);
+        concatenatingMediaSource.addMediaSource(videoSource);
+      }
+    }
+    if (audioUri != null ) {
+      audioSource = creator.createMediaSource(audioUri, fileExt);
     }
 
     if (!sourcePrepared) {
       ensurePlayer(); // sourcePrepared is set to false only when player is null.
-      player.prepare(mediaSource, playbackInfo.getResumeWindow() == C.INDEX_UNSET, false);
+      if(audioUri != null && videoUris == null){
+        player.prepare(new MergingMediaSource(videoSource, audioSource),
+            playbackInfo.getResumeWindow() == C.INDEX_UNSET, false);
+      } else if (audioUri != null && videoUris != null){
+        player.prepare(concatenatingMediaSource, playbackInfo.getResumeWindow() == C.INDEX_UNSET, false);
+      }else {
+        player.prepare(videoSource, playbackInfo.getResumeWindow() == C.INDEX_UNSET, false);
+      }
       sourcePrepared = true;
     }
   }
+
+
 
   private void ensurePlayer() {
     if (player == null) {

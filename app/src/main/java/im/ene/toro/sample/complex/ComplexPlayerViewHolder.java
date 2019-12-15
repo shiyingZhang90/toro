@@ -43,7 +43,9 @@ public class ComplexPlayerViewHolder extends RecyclerView.ViewHolder implements 
   static final int LAYOUT_RES = R.layout.view_holder_exoplayer_complex;
 
   ExoPlayerViewHelper helper;
-  Uri mediaUri;
+  Uri videoUri;
+  Uri audioUri;
+  Uri[] videoUris;
 
   @BindView(R.id.player) PlayerView playerView;
 
@@ -63,7 +65,13 @@ public class ComplexPlayerViewHolder extends RecyclerView.ViewHolder implements 
   @Override
   public void initialize(@NonNull Container container, @NonNull PlaybackInfo playbackInfo) {
     if (helper == null) {
-      helper = new ExoPlayerViewHelper(this, mediaUri);
+      if(audioUri != null && videoUris != null){
+        helper = new ExoPlayerViewHelper(this, videoUris, audioUri);
+      } else if(audioUri != null && videoUris == null){
+        helper = new ExoPlayerViewHelper(this, videoUri, audioUri);
+      } else {
+        helper = new ExoPlayerViewHelper(this, videoUri);
+      }
     }
     helper.initialize(container, playbackInfo);
   }
@@ -106,7 +114,8 @@ public class ComplexPlayerViewHolder extends RecyclerView.ViewHolder implements 
     } else {
       playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT);
     }
-
-    this.mediaUri = media.mediaUri;
+    this.videoUris = media.videoUris;
+    this.videoUri = media.videoUri;
+    this.audioUri = media.audioUri;
   }
 }

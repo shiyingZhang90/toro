@@ -34,6 +34,7 @@ final class MediaList extends ArrayList<Content.Media> {
     return Content.Media.getItem(index);
   }
 
+
   @Override public int indexOf(Object o) {
     return o instanceof Content.Media ? ((Content.Media) o).index : -1;
   }

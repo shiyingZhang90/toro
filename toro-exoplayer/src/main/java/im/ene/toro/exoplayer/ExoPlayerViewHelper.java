@@ -52,7 +52,17 @@ public class ExoPlayerViewHelper extends ToroPlayerHelper {
   }
 
   public ExoPlayerViewHelper(@NonNull ToroPlayer player, @NonNull Uri uri) {
-    this(player, uri, null);
+    this(player, uri, null, with(player.getPlayerView().getContext()).getDefaultCreator());
+  }
+
+  //Add option to provide both audio and video
+  public ExoPlayerViewHelper(@NonNull ToroPlayer player, @NonNull Uri videoUri, @NonNull Uri audioUri) {
+    this(player, videoUri, audioUri, null, with(player.getPlayerView().getContext()).getDefaultCreator());
+  }
+
+  //Add option to provide both audio and several video clips chained together
+  public ExoPlayerViewHelper(@NonNull ToroPlayer player, @NonNull Uri[] videoUris, @NonNull Uri audioUri) {
+    this(player, videoUris, audioUri, null, with(player.getPlayerView().getContext()).getDefaultCreator());
   }
 
   public ExoPlayerViewHelper(@NonNull ToroPlayer player, @NonNull Uri uri,
@@ -71,6 +81,18 @@ public class ExoPlayerViewHelper extends ToroPlayerHelper {
       @NonNull ExoCreator creator) {
     this(player, new ExoPlayable(creator, uri, fileExt));
   }
+
+  public ExoPlayerViewHelper(@NonNull ToroPlayer player, @NonNull Uri videoUri, @NonNull Uri audioUri, @Nullable String fileExt,
+      @NonNull ExoCreator creator) {
+    this(player, new ExoPlayable(creator, videoUri, audioUri, fileExt));
+  }
+
+  public ExoPlayerViewHelper(@NonNull ToroPlayer player, @NonNull Uri[] videoUris, @NonNull Uri audioUri, @Nullable String fileExt,
+      @NonNull ExoCreator creator) {
+    this(player, new ExoPlayable(creator, videoUris, audioUri, fileExt));
+  }
+
+
 
   public ExoPlayerViewHelper(@NonNull ToroPlayer player, @NonNull ExoPlayable playable) {
     super(player);
