@@ -44,7 +44,7 @@ public class ComplexPlayerViewHolder extends RecyclerView.ViewHolder implements 
 
   ExoPlayerViewHelper helper;
   Uri videoUri;
-  Uri audioUri;
+  Uri[] audioUris;
   Uri[] videoUris;
 
   @BindView(R.id.player) PlayerView playerView;
@@ -65,10 +65,8 @@ public class ComplexPlayerViewHolder extends RecyclerView.ViewHolder implements 
   @Override
   public void initialize(@NonNull Container container, @NonNull PlaybackInfo playbackInfo) {
     if (helper == null) {
-      if(audioUri != null && videoUris != null){
-        helper = new ExoPlayerViewHelper(this, videoUris, audioUri);
-      } else if(audioUri != null && videoUris == null){
-        helper = new ExoPlayerViewHelper(this, videoUri, audioUri);
+      if(audioUris != null && videoUris != null){
+        helper = new ExoPlayerViewHelper(this, videoUris, audioUris);
       } else {
         helper = new ExoPlayerViewHelper(this, videoUri);
       }
@@ -116,6 +114,6 @@ public class ComplexPlayerViewHolder extends RecyclerView.ViewHolder implements 
     }
     this.videoUris = media.videoUris;
     this.videoUri = media.videoUri;
-    this.audioUri = media.audioUri;
+    this.audioUris = media.audioUris;
   }
 }

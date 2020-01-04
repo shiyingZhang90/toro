@@ -28,6 +28,8 @@ import im.ene.toro.exoplayer.ExoPlayerViewHelper;
 import im.ene.toro.helper.ToroPlayerHelper;
 import im.ene.toro.media.PlaybackInfo;
 import im.ene.toro.widget.Container;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import toro.demo.ads.R;
@@ -126,7 +128,8 @@ class VideoViewHolder extends BaseViewHolder implements ToroPlayer, ToroPlayer.E
     if (payload instanceof Uri) {
       this.mediaUri = (Uri) payload;
     } else {
-      this.mediaUri = Uri.parse("https://video-dev.github.io/streams/x36xhzz/x36xhzz.m3u8");
+      this.mediaUri = Uri.parse("https://www.youtube.com/watch?v=STFM0giTG-E");
+
     }
 
     Glide.with(itemView)

@@ -64,12 +64,10 @@ public class ExoPlayable extends PlayableImpl {
    * @param audioUri the {@link Uri} of the media.
    * @param fileExt the custom extension of the media Uri.
    */
-  public ExoPlayable(ExoCreator creator, Uri videoUri, Uri audioUri, String fileExt) {
-    super(creator, videoUri, audioUri, fileExt);
-  }
+
   /** If we have several video clips want to play together */
-  public ExoPlayable(ExoCreator creator, Uri[] videoUris, Uri audioUri, String fileExt) {
-    super(creator, videoUris, audioUri, fileExt);
+  public ExoPlayable(ExoCreator creator, Uri[] videoUris, Uri[] audioUris, String fileExt) {
+    super(creator, videoUris, audioUris, fileExt);
   }
 
   public ExoPlayable(ExoCreator creator, Uri videoUri, String fileExt) {

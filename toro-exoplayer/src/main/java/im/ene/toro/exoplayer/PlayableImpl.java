@@ -24,6 +24,8 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.audio.MediaCodecAudioRenderer;
+import com.google.android.exoplayer2.mediacodec.MediaCodecSelector;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MergingMediaSource;
@@ -60,7 +62,7 @@ class PlayableImpl implements Playable {
 
   protected final Uri videoUri; // immutable, parcelable
   protected final Uri[] videoUris; // immutable, parcelable
-  protected final Uri audioUri;
+  protected final Uri[] audioUris;
   protected final String fileExt;
   protected final ExoCreator creator; // required, cached
 
@@ -73,19 +75,13 @@ class PlayableImpl implements Playable {
   private boolean sourcePrepared = false;
   private boolean listenerApplied = false;
 
-  PlayableImpl(ExoCreator creator, Uri videoUri,Uri audioUri, String fileExt) {
-    this.creator = creator;
-    this.videoUri = videoUri;
-    this.videoUris = null;
-    this.audioUri = audioUri;
-    this.fileExt = fileExt;
-  }
 
-  PlayableImpl(ExoCreator creator, Uri[] videoUris,Uri audioUri, String fileExt) {
+
+  PlayableImpl(ExoCreator creator, Uri[] videoUris,Uri[] audioUris, String fileExt) {
     this.creator = creator;
     this.videoUri = null;
     this.videoUris = videoUris;
-    this.audioUri = audioUri;
+    this.audioUris = audioUris;
     this.fileExt = fileExt;
   }
 
@@ -93,7 +89,7 @@ class PlayableImpl implements Playable {
     this.creator = creator;
     this.videoUri = videoUri;
     this.videoUris = null;
-    this.audioUri = null;
+    this.audioUris = null;
     this.fileExt = fileExt;
   }
 
@@ -273,26 +269,22 @@ class PlayableImpl implements Playable {
       sourcePrepared = false;
       videoSource = creator.createMediaSource(videoUri, fileExt);
     }
-    if (videoUris != null) {  // Only actually prepare the source when play() is called. One problem is if no music will be added, we only need to check videoSource
+
+    if (videoUris != null && audioUris != null && videoUris.length == audioUris.length ) {  // Only actually prepare the source when play() is called. One problem is if no music will be added, we only need to check videoSource
       sourcePrepared = false;
-      concatenatingMediaSource = new ConcatenatingMediaSource(creator.createMediaSource(videoUris[0], fileExt));
+      concatenatingMediaSource = new ConcatenatingMediaSource(new MergingMediaSource(creator.createMediaSource(videoUris[0], fileExt), creator.createMediaSource(audioUris[0], fileExt)));
       for(int i=1; i<videoUris.length; i++) {
         videoSource = creator.createMediaSource(videoUris[i], fileExt);
-        concatenatingMediaSource.addMediaSource(videoSource);
+        audioSource = creator.createMediaSource(audioUris[i], fileExt);
+        concatenatingMediaSource.addMediaSource(new MergingMediaSource(videoSource, audioSource));
       }
-    }
-    if (audioUri != null ) {
-      audioSource = creator.createMediaSource(audioUri, fileExt);
     }
 
     if (!sourcePrepared) {
       ensurePlayer(); // sourcePrepared is set to false only when player is null.
-      if(audioUri != null && videoUris == null){
-        player.prepare(new MergingMediaSource(videoSource, audioSource),
-            playbackInfo.getResumeWindow() == C.INDEX_UNSET, false);
-      } else if (audioUri != null && videoUris != null){
+      if(audioUris != null && videoUris != null){
         player.prepare(concatenatingMediaSource, playbackInfo.getResumeWindow() == C.INDEX_UNSET, false);
-      }else {
+      } else {
         player.prepare(videoSource, playbackInfo.getResumeWindow() == C.INDEX_UNSET, false);
       }
       sourcePrepared = true;
